@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retroalimentación Inmediata</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .navigation-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .feedback-correct {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+        
+        .feedback-incorrect {
+            background: #fee2e2;
+            border-left: 4px solid #ef4444;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+        
+        .answered-status {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" style="height: 40px;">
+                    <div>
+                        <h1 class="title" style="font-size: 1.5rem;">Modo Retroalimentación Inmediata</h1>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div id="timer" style="font-size: 1.3rem; font-weight: 600; color: #0077C5;">60:00</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="exam-card">
+            <div class="progress">
+                <span>Pregunta <span id="current-q-num">1</span> de <span id="total-q">0</span></span>
+                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                <span id="score-display">0%</span>
+            </div>
+            
+            <div id="question-container"></div>
+            
+            <div id="feedback-container"></div>
+            
+            <div class="navigation-buttons">
+                <button onclick="previousQuestion()" id="prev-btn" class="btn-nav" style="background: #64748b;">◀ Anterior</button>
+                <button onclick="checkAnswer()" id="check-btn" class="btn-submit">✓ Verificar Respuesta</button>
+                <button onclick="nextQuestion()" id="next-btn" class="btn-submit">Siguiente ▶</button>
+            </div>
+            
+            <div class="footer" style="margin-top: 2rem;">
+                <button onclick="finishExam()" class="btn-submit">Finalizar Examen</button>
+                <button onclick="goHome()" class="btn-reset">Volver al Inicio</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+        let currentIndex = 0;
+        let userAnswers = {};
+        let questionResults = {};
+        let timerInterval = null;
+        let timeLeft = 3600;
+        let totalQuestions = 0;
+        
+        function init() {
+            totalQuestions = QUESTIONS_DB.length;
+            document.getElementById('total-q').textContent = totalQuestions;
+            
+            // Cargar datos guardados
+            const savedAnswers = localStorage.getItem('immediateAnswers');
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            
+            startTimer();
+            renderQuestion();
+        }
+        
+        function startTimer() {
+            const savedTime = localStorage.getItem('timeLeft');
+            if (savedTime) {
+                timeLeft = parseInt(savedTime);
+            }
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    finishExam();
+                } else {
+                    timeLeft--;
+                    localStorage.setItem('timeLeft', timeLeft);
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    document.getElementById("timer").textContent = 
+                        `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+                }
+            }, 1000);
+        }
+        
+        function renderQuestion() {
+            const question = QUESTIONS_DB[currentIndex];
+            const container = document.getElementById('question-container');
+            
+            let html = `
+                <div class="question">
+                    <div class="question-header">
+                        <div class="question-number">${question.id}</div>
+                        <div class="question-text">${escapeHtml(question.text)}</div>
+                        ${question.type === "multi" ? `<div class="multi-label">Elige ${question.correct.length} respuesta(s)</div>` : ""}
+                    </div>
+                    <div class="options">
+            `;
+            
+            question.options.forEach(opt => {
+                const isChecked = userAnswers[question.id] && userAnswers[question.id].includes(opt.value);
+                const inputType = question.type === "multi" ? "checkbox" : "radio";
+                const name = question.type === "single" ? `name="q${question.id}"` : "";
+                
+                html += `
+                    <label class="option">
+                        <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
+                                onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}')">
+                        <span class="option-label">${escapeHtml(opt.label)}</span>
+                    </label>
+                `;
+            });
+            
+            html += `</div></div>`;
+            container.innerHTML = html;
+            
+            // Limpiar feedback
+            document.getElementById('feedback-container').innerHTML = '';
+            
+            // Actualizar navegación
+            document.getElementById('prev-btn').disabled = (currentIndex === 0);
+            document.getElementById('current-q-num').textContent = currentIndex + 1;
+            
+            // Actualizar progreso
+            updateProgress();
+        }
+        
+        function saveAnswer(qId, value, type) {
+            if (!userAnswers[qId]) userAnswers[qId] = [];
+            
+            if (type === "single") {
+                userAnswers[qId] = [value];
+            } else {
+                if (userAnswers[qId].includes(value)) {
+                    userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
+                } else {
+                    userAnswers[qId].push(value);
+                }
+            }
+            
+            // Guardar en localStorage
+            localStorage.setItem('immediateAnswers', JSON.stringify(userAnswers));
+            updateProgress();
+        }
+        
+        function checkAnswer() {
+            const question = QUESTIONS_DB[currentIndex];
+            const userAnswer = userAnswers[question.id] || [];
+            let isCorrect = false;
+            
+            if (question.type === "single") {
+                isCorrect = userAnswer[0] === question.correct;
+            } else {
+                isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(question.correct.sort());
+            }
+            
+            const correctText = Array.isArray(question.correct) ? 
+                question.correct.map(c => {
+                    const opt = question.options.find(o => o.value === c);
+                    return opt ? opt.label : c;
+                }).join(" • ") : 
+                question.options.find(o => o.value === question.correct).label;
+            
+            const userText = userAnswer.length ? 
+                userAnswer.map(a => {
+                    const opt = question.options.find(o => o.value === a);
+                    return opt ? opt.label : a;
+                }).join(" • ") : "No respondida";
+            
+            const feedbackDiv = document.getElementById('feedback-container');
+            feedbackDiv.innerHTML = `
+                <div class="${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}">
+                    <strong>${isCorrect ? '✓ ¡Correcto!' : '✗ Incorrecto'}</strong><br>
+                    <strong>Tu respuesta:</strong> ${userText}<br>
+                    <strong>Respuesta correcta:</strong> ${correctText}<br>
+                    ${question.explanation ? `<strong>Explicación:</strong> ${question.explanation}` : ''}
+                </div>
+            `;
+            
+            // Guardar resultado
+            questionResults[question.id] = {
+                isCorrect: isCorrect,
+                userAnswer: userAnswer,
+                correctAnswer: question.correct
+            };
+            
+            localStorage.setItem('immediateResults', JSON.stringify(questionResults));
+        }
+        
+        function nextQuestion() {
+            if (currentIndex < totalQuestions - 1) {
+                currentIndex++;
+                renderQuestion();
+            }
+        }
+        
+        function previousQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+        
+        function updateProgress() {
+            const answeredCount = Object.keys(userAnswers).filter(id => userAnswers[id] && userAnswers[id].length > 0).length;
+            const percentage = (answeredCount / totalQuestions) * 100;
+            
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+            document.getElementById('score-display').textContent = `${Math.round(percentage)}%`;
+        }
+        
+        function finishExam() {
+            clearInterval(timerInterval);
+            
+            // Asegurar que todas las preguntas tengan resultado
+            QUESTIONS_DB.forEach(q => {
+                if (!questionResults[q.id]) {
+                    const userAnswer = userAnswers[q.id] || [];
+                    let isCorrect = false;
+                    if (q.type === "single") {
+                        isCorrect = userAnswer[0] === q.correct;
+                    } else {
+                        isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correct.sort());
+                    }
+                    questionResults[q.id] = {
+                        isCorrect: isCorrect,
+                        userAnswer: userAnswer,
+                        correctAnswer: q.correct
+                    };
+                }
+            });
+            
+            localStorage.setItem('finalResults', JSON.stringify(questionResults));
+            localStorage.setItem('totalQuestions', totalQuestions);
+            window.location.href = 'results.html';
+        }
+        
+        function goHome() {
+            clearInterval(timerInterval);
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        init();
+    </script>
+</body>
+</html>

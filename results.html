@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados • Simulador NetSuite</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 3rem;
+            font-weight: 700;
+            position: relative;
+        }
+        
+        .results-summary {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .result-detail-item {
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .result-detail-item:hover {
+            transform: translateX(4px);
+        }
+        
+        .correct-bg {
+            background: #ecfdf5;
+            border-left: 4px solid #10b981;
+        }
+        
+        .incorrect-bg {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .detail-expanded {
+            padding: 1rem;
+            margin: 0.5rem 0 1rem 3rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border-radius: 9999px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn.active {
+            background: #0077C5;
+            color: white;
+            border-color: #0077C5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" style="height: 40px;">
+                    <div>
+                        <h1 class="title" style="font-size: 1.5rem;">Resultados del Examen</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="exam-card">
+            <div class="results-summary">
+                <div class="score-circle" id="score-circle">
+                    <div id="score-text">0%</div>
+                </div>
+                <h3 id="result-message" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></h3>
+                <p id="result-details" style="color: #64748b;"></p>
+            </div>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterResults('all')">Todas</button>
+                <button class="filter-btn" onclick="filterResults('correct')">✅ Correctas</button>
+                <button class="filter-btn" onclick="filterResults('incorrect')">❌ Incorrectas</button>
+            </div>
+            
+            <div id="results-container"></div>
+            
+            <div class="footer" style="margin-top: 2rem;">
+                <button onclick="reviewWrong()" id="review-btn" class="btn-submit">Repasar Errores</button>
+                <button onclick="goHome()" class="btn-reset">Volver a Intentar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+        let questionResults = {};
+        let totalQuestions = 0;
+        let currentFilter = 'all';
+        
+        function init() {
+            const savedResults = localStorage.getItem('finalResults');
+            if (savedResults) {
+                questionResults = JSON.parse(savedResults);
+            } else {
+                alert('No se encontraron resultados. Por favor, realiza el examen primero.');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || QUESTIONS_DB.length;
+            
+            const correctCount = Object.values(questionResults).filter(r => r.isCorrect).length;
+            const percentage = Math.round((correctCount / totalQuestions) * 100);
+            
+            // Actualizar score circle
+            const scoreCircle = document.getElementById('score-circle');
+            const degrees = (percentage / 100) * 360;
+            scoreCircle.style.background = `conic-gradient(#0077C5 0deg ${degrees}deg, #e2e8f0 ${degrees}deg 360deg)`;
+            document.getElementById('score-text').innerHTML = `${percentage}<span style="font-size:1rem;">%</span>`;
+            
+            // Mensaje según resultado
+            if (percentage >= 80) {
+                document.getElementById('result-message').innerHTML = "¡Excelente! Estás listo para el examen";
+            } else if (percentage >= 70) {
+                document.getElementById('result-message').innerHTML = "¡Muy bien! Solo un poco más de repaso";
+            } else if (percentage >= 60) {
+                document.getElementById('result-message').innerHTML = "Buen intento. Sigue practicando padre santo";
+            } else {
+                document.getElementById('result-message').innerHTML = "Traes puro sueño, pero... ¡Puedes mejorar!";
+            }
+            
+            document.getElementById('result-details').innerHTML = `Obtuviste <strong>${correctCount}</strong> de <strong>${totalQuestions}</strong> respuestas correctas (${percentage}%)`;
+            
+            // Mostrar u ocultar botón de repaso
+            const incorrectCount = Object.values(questionResults).filter(r => !r.isCorrect).length;
+            document.getElementById('review-btn').style.display = incorrectCount > 0 ? 'block' : 'none';
+            
+            renderResults();
+        }
+        
+        function renderResults() {
+            const container = document.getElementById('results-container');
+            let html = '';
+            
+            QUESTIONS_DB.forEach(q => {
+                const result = questionResults[q.id];
+                if (!result) return;
+                
+                // Filtrar según selección
+                if (currentFilter === 'correct' && !result.isCorrect) return;
+                if (currentFilter === 'incorrect' && result.isCorrect) return;
+                
+                const userText = result.userAnswer.length ? 
+                    result.userAnswer.map(a => {
+                        const opt = q.options.find(o => o.value === a);
+                        return opt ? opt.label : a;
+                    }).join(" • ") : "Sin responder";
+                
+                const correctText = Array.isArray(result.correctAnswer) ? 
+                    result.correctAnswer.map(c => {
+                        const opt = q.options.find(o => o.value === c);
+                        return opt ? opt.label : c;
+                    }).join(" • ") : 
+                    q.options.find(o => o.value === result.correctAnswer).label;
+                
+                html += `
+                    <div class="result-detail-item ${result.isCorrect ? 'correct-bg' : 'incorrect-bg'}" onclick="toggleDetail(${q.id})">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="font-size: 1.5rem;">${result.isCorrect ? "✅" : "❌"}</div>
+                            <div style="flex: 1;">
+                                <strong>Pregunta ${q.id}</strong>
+                                <div style="font-size: 0.9rem;">${escapeHtml(q.text.substring(0, 100))}${q.text.length > 100 ? '...' : ''}</div>
+                                <div style="font-size: 0.85rem; margin-top: 4px; color: ${result.isCorrect ? '#10b981' : '#ef4444'}">
+                                    Tu respuesta: ${userText}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="detail-${q.id}" class="detail-expanded">
+                        <strong>✅ Respuesta correcta:</strong> ${correctText}<br>
+                        ${q.explanation ? `<strong>📖 Explicación:</strong> ${q.explanation}` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleDetail(questionId) {
+            const detailDiv = document.getElementById(`detail-${questionId}`);
+            if (detailDiv.style.display === 'none' || detailDiv.style.display === '') {
+                detailDiv.style.display = 'block';
+            } else {
+                detailDiv.style.display = 'none';
+            }
+        }
+        
+        function filterResults(type) {
+            currentFilter = type;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderResults();
+        }
+        
+        function reviewWrong() {
+            const wrongQuestions = QUESTIONS_DB.filter(q => {
+                const result = questionResults[q.id];
+                return result && !result.isCorrect;
+            });
+            
+            if (wrongQuestions.length === 0) {
+                alert("🎉 ¡No tienes respuestas incorrectas! ¡Excelente trabajo!");
+                return;
+            }
+            
+            // Guardar preguntas incorrectas para repaso
+            localStorage.setItem('reviewQuestions', JSON.stringify(wrongQuestions.map(q => q.id)));
+            window.location.href = 'immediate-mode.html?review=true';
+        }
+        
+        function goHome() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        init();
+    </script>
+</body>
+</html>

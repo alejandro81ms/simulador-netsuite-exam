@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Examen Completo</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .exam-questions {
+            max-height: 70vh;
+            overflow-y: auto;
+            padding-right: 1rem;
+        }
+        
+        .submit-section {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 1rem;
+            border-top: 2px solid #e2e8f0;
+            margin-top: 2rem;
+        }
+        
+        .warning-message {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" style="height: 40px;">
+                    <div>
+                        <h1 class="title" style="font-size: 1.5rem;">Examen Completo</h1>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div id="timer" style="font-size: 1.3rem; font-weight: 600; color: #0077C5;">60:00</div>
+                    <div id="answered-counter" style="font-size: 0.9rem;">0 respondidas</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="exam-card">
+            <div class="progress">
+                <span>Progreso</span>
+                <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+                <span id="progress-percent">0%</span>
+            </div>
+            
+            <div class="exam-questions" id="questions-container"></div>
+            
+            <div class="submit-section">
+                <div class="warning-message" id="warning-message" style="display:none;">
+                    Te faltan responder algunas preguntas. Revisa antes de finalizar.
+                </div>
+                <div class="footer">
+                    <button onclick="submitExam()" class="btn-submit">Finalizar Examen</button>
+                    <button onclick="goHome()" class="btn-reset">Volver al Inicio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+        let userAnswers = {};
+        let timerInterval = null;
+        let timeLeft = 3600;
+        let totalQuestions = 0;
+        
+        function init() {
+            totalQuestions = QUESTIONS_DB.length;
+            
+            // Cargar respuestas guardadas
+            const savedAnswers = localStorage.getItem('finalAnswers');
+            if (savedAnswers) {
+                userAnswers = JSON.parse(savedAnswers);
+            }
+            
+            startTimer();
+            renderAllQuestions();
+            updateProgress();
+        }
+        
+        function startTimer() {
+            const savedTime = localStorage.getItem('timeLeft');
+            if (savedTime) {
+                timeLeft = parseInt(savedTime);
+            }
+            
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                } else {
+                    timeLeft--;
+                    localStorage.setItem('timeLeft', timeLeft);
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    document.getElementById("timer").textContent = 
+                        `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+                }
+            }, 1000);
+        }
+        
+        function renderAllQuestions() {
+            const container = document.getElementById('questions-container');
+            let html = '';
+            
+            QUESTIONS_DB.forEach((q, index) => {
+                html += `
+                    <div class="question" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                        <div class="question-header">
+                            <div class="question-number">${q.id}</div>
+                            <div class="question-text">${escapeHtml(q.text)}</div>
+                            ${q.type === "multi" ? `<div class="multi-label">Elige ${q.correct.length} respuesta(s)</div>` : ""}
+                        </div>
+                        <div class="options">
+                `;
+                
+                q.options.forEach(opt => {
+                    const isChecked = userAnswers[q.id] && userAnswers[q.id].includes(opt.value);
+                    const inputType = q.type === "multi" ? "checkbox" : "radio";
+                    const name = q.type === "single" ? `name="q${q.id}"` : "";
+                    
+                    html += `
+                        <label class="option">
+                            <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
+                                    onchange="saveAnswer(${q.id}, '${opt.value}', '${q.type}')">
+                            <span class="option-label">${escapeHtml(opt.label)}</span>
+                        </label>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function saveAnswer(qId, value, type) {
+            if (!userAnswers[qId]) userAnswers[qId] = [];
+            
+            if (type === "single") {
+                userAnswers[qId] = [value];
+            } else {
+                if (userAnswers[qId].includes(value)) {
+                    userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
+                } else {
+                    userAnswers[qId].push(value);
+                }
+            }
+            
+            localStorage.setItem('finalAnswers', JSON.stringify(userAnswers));
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            const answeredCount = Object.keys(userAnswers).filter(id => userAnswers[id] && userAnswers[id].length > 0).length;
+            const percentage = (answeredCount / totalQuestions) * 100;
+            
+            document.getElementById('progress-fill').style.width = `${percentage}%`;
+            document.getElementById('progress-percent').textContent = `${Math.round(percentage)}%`;
+            document.getElementById('answered-counter').textContent = `${answeredCount} de ${totalQuestions} respondidas`;
+            
+            const warningMsg = document.getElementById('warning-message');
+            if (answeredCount < totalQuestions) {
+                warningMsg.style.display = 'block';
+            } else {
+                warningMsg.style.display = 'none';
+            }
+        }
+        
+        function submitExam() {
+            clearInterval(timerInterval);
+            
+            // Calcular resultados
+            let correctCount = 0;
+            const questionResults = {};
+            
+            QUESTIONS_DB.forEach(q => {
+                const userAnswer = userAnswers[q.id] || [];
+                let isCorrect = false;
+                
+                if (q.type === "single") {
+                    isCorrect = userAnswer[0] === q.correct;
+                } else {
+                    isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correct.sort());
+                }
+                
+                if (isCorrect) correctCount++;
+                
+                questionResults[q.id] = {
+                    isCorrect: isCorrect,
+                    userAnswer: userAnswer,
+                    correctAnswer: q.correct
+                };
+            });
+            
+            localStorage.setItem('finalResults', JSON.stringify(questionResults));
+            localStorage.setItem('totalQuestions', totalQuestions);
+            localStorage.setItem('correctCount', correctCount);
+            
+            window.location.href = 'results.html';
+        }
+        
+        function goHome() {
+            clearInterval(timerInterval);
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        init();
+    </script>
+</body>
+</html>

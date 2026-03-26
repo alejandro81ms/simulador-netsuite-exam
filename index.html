@@ -5,122 +5,151 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador de Examen • Oracle NetSuite SuiteFoundation</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .mode-selector {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        
+        .mode-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            width: 300px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .mode-card:hover {
+            transform: translateY(-5px);
+            border-color: #0077C5;
+            box-shadow: 0 10px 30px rgba(0, 119, 197, 0.2);
+        }
+        
+        .mode-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .mode-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #0077C5;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mode-desc {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .info-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            text-align: left;
+        }
+        
+        .btn-start {
+            background: #0077C5;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 9999px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-start:hover {
+            background: #005a94;
+            transform: translateY(-2px);
+        }
+    </style>
 </head>
 <body>
     <div class="header">
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <img src="netsuite_logo.jpg" alt="NetSuite" style="height: 80px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img src="netsuite_logo.jpg" alt="NetSuite" style="height: 48px;">
                     <div>
                         <h1 class="title">Simulador de Examen</h1>
                         <p style="color:#0077C5; font-weight:600;">Oracle NetSuite SuiteFoundation – Practice Exam</p>
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 1.1rem; font-weight: 500;" id="question-counter">Cargando...</div>
-                    <div id="timer" style="font-size: 1.3rem; font-weight: 600; color: #0077C5;">60:00</div>
+                    <div id="question-count" style="font-size: 1.1rem; font-weight: 500;">Cargando...</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container">
-        <!-- Configuración Inicial -->
-        <div class="exam-card" id="config-screen">
-            <h2 style="text-align:center; margin-bottom:1rem;">Configuración</h2>
-            <p style="text-align:center; margin-bottom:2rem;">Elige cómo quieres practicar:</p>
+        <div class="exam-card">
+            <h2 style="text-align:center; margin-bottom:1rem;">Elige tu modo de estudio</h2>
             
-            <div style="max-width: 500px; margin: 0 auto;">
-                <div style="margin-bottom: 2rem;">
-                    <h3 style="margin-bottom: 1rem;">Modo de Estudio:</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <button onclick="startExam('immediate')" class="config-btn" style="flex:1; padding: 1rem; background: #0077C5; color: white; border: none; border-radius: 12px; cursor: pointer;">
-                            📝 Retroalimentación Inmediata<br>
-                            <small style="font-size: 0.85rem;">Ver respuesta correcta después de cada pregunta</small>
-                        </button>
-                        <button onclick="startExam('final')" class="config-btn" style="flex:1; padding: 1rem; background: #2c3e50; color: white; border: none; border-radius: 12px; cursor: pointer;">
-                            📊 Resultados al Final<br>
-                            <small style="font-size: 0.85rem;">Evaluación completa al terminar</small>
-                        </button>
-                    </div>
+            <div class="mode-selector">
+                <div class="mode-card" onclick="selectMode('immediate')">
+                    <div class="mode-icon"></div>
+                    <div class="mode-title">Retroalimentación Inmediata</div>
+                    <div class="mode-desc">Ver respuesta correcta después de cada pregunta</div>
+                    <div class="mode-desc" style="margin-top: 0.5rem;">✓ Pregunta por pregunta<br>✓ Feedback instantáneo<br>✓ Repaso de errores</div>
                 </div>
                 
-                <div style="background: #f8fafc; padding: 1rem; border-radius: 12px;">
-                    <h3 style="margin-bottom: 0.5rem;">Información del Examen:</h3>
-                    <p>• Preguntas examen SuiteFoundation</p>
-                    <p>• Algunas preguntas requieren seleccionar 2 respuestas</p>
-                    <p>• Tiempo recomendado: 60 minutos</p>
+                <div class="mode-card" onclick="selectMode('final')">
+                    <div class="mode-icon"></div>
+                    <div class="mode-title">Resultados al Final</div>
+                    <div class="mode-desc">Evaluación completa al terminar</div>
+                    <div class="mode-desc" style="margin-top: 0.5rem;">✓ Todas las preguntas juntas<br>✓ Simula examen<br>✓ Resultados detallados</div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Modo Pregunta por Pregunta (Retroalimentación Inmediata) -->
-        <div id="single-question-mode" style="display:none;">
-            <div class="exam-card">
-                <div class="progress">
-                    <span>Pregunta <span id="current-q-num">1</span> de <span id="total-q">0</span></span>
-                    <div class="progress-bar"><div class="progress-fill" id="single-progress-fill"></div></div>
-                    <span id="score-display">0%</span>
-                </div>
-                
-                <div id="current-question"></div>
-                
-                <div class="feedback" id="feedback" style="display:none; padding: 1rem; margin-top: 1rem; border-radius: 12px;"></div>
-                
-                <div class="footer" style="margin-top: 2rem;">
-                    <button onclick="previousQuestion()" id="prev-btn" class="btn-nav" style="background: #64748b;">◀ Anterior</button>
-                    <button onclick="checkAnswer()" id="check-btn" class="btn-submit">✓ Verificar Respuesta</button>
-                    <button onclick="nextQuestion()" id="next-btn" class="btn-submit">Siguiente ▶</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modo Examen Completo (Resultados al Final) -->
-        <div id="full-exam-mode" style="display:none;">
-            <div class="exam-card">
-                <div class="progress">
-                    <span>Progreso: <span id="answered-count">0</span> de <span id="total-questions">0</span> respondidas</span>
-                    <div class="progress-bar"><div class="progress-fill" id="full-exam-progress"></div></div>
-                    <span id="full-exam-percent">0%</span>
-                </div>
-                
-                <div id="full-exam-questions"></div>
-                
-                <div class="footer">
-                    <button onclick="submitFullExam()" class="btn-submit">✅ Finalizar Examen y Ver Resultados</button>
-                    <button onclick="resetToConfig()" class="btn-reset">🔄 Reiniciar</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Resultados Finales -->
-        <div id="results" class="results" style="display:none;">
-            <h2 style="text-align:center; margin-bottom:1rem;">¡Examen Finalizado!</h2>
-            
-            <div class="score-circle" id="score-circle">
-                <div id="score-text">0%</div>
             </div>
             
-            <div style="text-align:center; margin-bottom:2rem;">
-                <h3 id="result-text" style="font-size:1.5rem;"></h3>
-                <p id="result-subtitle" style="color:#64748b;"></p>
-            </div>
-
-            <div style="margin-bottom: 1rem; text-align: center;">
-                <button onclick="toggleDetail()" class="btn-reset" style="padding: 8px 16px;">📋 Mostrar/Ocultar Detalle</button>
-                <button onclick="reviewWrongAnswers()" class="btn-reset" style="padding: 8px 16px;">📚 Repasar Solo Errores</button>
-            </div>
-
-            <div id="results-detail" style="max-height: 500px; overflow-y: auto;"></div>
-
-            <div class="footer" style="margin-top:2rem;">
-                <button onclick="resetToConfig()" class="btn-reset">🔄 Nuevo Simulador</button>
+            <div class="info-box">
+                <h3 style="margin-bottom: 0.5rem;">Información del Examen:</h3>
+                <p>• <span id="total-questions-display">0</span> preguntas reales del examen SuiteFoundation</p>
+                <p>• Algunas preguntas requieren seleccionar 2 respuestas</p>
+                <p>• Tiempo recomendado: 60 minutos</p>
+                <p>• Puedes repasar solo las preguntas incorrectas al final</p>
             </div>
         </div>
     </div>
 
     <script src="questions.js"></script>
-    <script src="script.js"></script>
+    <script>
+        let totalQuestions = 0;
+        
+        function loadQuestions() {
+            if (typeof QUESTIONS_DB !== 'undefined') {
+                totalQuestions = QUESTIONS_DB.length;
+                document.getElementById('question-count').textContent = `${totalQuestions} preguntas • 60 minutos`;
+                document.getElementById('total-questions-display').textContent = totalQuestions;
+            } else {
+                setTimeout(loadQuestions, 100);
+            }
+        }
+        
+        function selectMode(mode) {
+            localStorage.setItem('examMode', mode);
+            localStorage.setItem('examStartTime', Date.now());
+            localStorage.setItem('timeLeft', '3600');
+            
+            if (mode === 'immediate') {
+                window.location.href = 'immediate-mode.html';
+            } else {
+                window.location.href = 'final-mode.html';
+            }
+        }
+        
+        loadQuestions();
+    </script>
 </body>
 </html>
