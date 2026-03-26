@@ -151,7 +151,7 @@
                 html += `
                     <label class="option" style="padding: 10px 14px;">
                         <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
-                               onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}', this)">
+                                onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}', this)">
                         <span class="option-label" style="font-size: 0.9rem;">${escapeHtml(opt.label)}</span>
                     </label>
                 `;
@@ -171,7 +171,6 @@
             updateProgress();
         }
         
-        // Función para guardar respuesta con control de límite en multi
         function saveAnswer(qId, value, type, inputElement) {
             const question = QUESTIONS_DB.find(q => q.id === qId);
             if (!question) return;
@@ -183,7 +182,6 @@
                 if (!userAnswers[qId]) userAnswers[qId] = [];
                 
                 if (inputElement.checked) {
-                    // Si ya se alcanzó el límite, desmarcar y mostrar alerta
                     if (userAnswers[qId].length >= question.correct.length) {
                         inputElement.checked = false;
                         alert(`Solo puedes seleccionar ${question.correct.length} opción(es) para esta pregunta.`);
@@ -191,7 +189,6 @@
                     }
                     userAnswers[qId].push(value);
                 } else {
-                    // Desmarcar: eliminar valor
                     userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
                 }
             }
@@ -266,7 +263,7 @@
         }
         
         function finishExam() {
-            if (confirm("¿Estás seguro de finalizar el examen? Se guardarán tus resultados.")) {
+            if (confirm("¿Finalizar el examen? Se guardarán tus resultados.")) {
                 clearInterval(timerInterval);
                 
                 QUESTIONS_DB.forEach(q => {

@@ -73,7 +73,6 @@
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                 <div class="logo-container">
-                    <!-- Logo actualizado -->
                     <img src="netsuite_logo.jpg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
                         <h1 class="title">Simulador SuiteFoundation</h1>
@@ -92,13 +91,13 @@
             <h2 style="text-align:center; margin-bottom:1rem; font-size: 1.5rem;">Elige tu modo de estudio</h2>
             
             <div class="mode-selector">
-                <div class="mode-card" onclick="selectModeWithConfirm('immediate')">
+                <div class="mode-card" onclick="selectMode('immediate')">
                     <div class="mode-title">Retroalimentación Inmediata</div>
                     <div class="mode-desc">Ver respuesta correcta después de cada pregunta</div>
                     <div class="mode-desc" style="margin-top: 0.5rem;">✓ Pregunta por pregunta<br>✓ Feedback instantáneo<br>✓ Repaso de errores</div>
                 </div>
                 
-                <div class="mode-card" onclick="selectModeWithConfirm('final')">
+                <div class="mode-card" onclick="selectMode('final')">
                     <div class="mode-title">Resultados al Final</div>
                     <div class="mode-desc">Evaluación completa al terminar</div>
                     <div class="mode-desc" style="margin-top: 0.5rem;">✓ Todas las preguntas juntas<br>✓ Simula examen real<br>✓ Resultados detallados</div>
@@ -107,7 +106,7 @@
             
             <div class="info-box">
                 <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Información del Examen:</h3>
-                <p style="font-size: 0.9rem;">• <span id="total-questions-display">0</span> preguntas reales del examen SuiteFoundation</p>
+                <p style="font-size: 0.9rem;">• <span id="total-questions-display">0</span> preguntas examen SuiteFoundation</p>
                 <p style="font-size: 0.9rem;">• Algunas preguntas requieren seleccionar 2 respuestas</p>
                 <p style="font-size: 0.9rem;">• Tiempo recomendado: 60 minutos</p>
                 <p style="font-size: 0.9rem;">• Puedes repasar solo las preguntas incorrectas al final</p>
@@ -129,22 +128,21 @@
             }
         }
         
-        function selectModeWithConfirm(mode) {
-            if (confirm(`¿Iniciar el modo "${mode === 'immediate' ? 'Retroalimentación Inmediata' : 'Resultados al Final'}"? Se perderán los datos actuales.`)) {
-                localStorage.setItem('examMode', mode);
-                localStorage.setItem('examStartTime', Date.now());
-                localStorage.setItem('timeLeft', '3600');
-                // Limpiar respuestas previas para evitar mezcla
-                localStorage.removeItem('immediateAnswers');
-                localStorage.removeItem('finalAnswers');
-                localStorage.removeItem('immediateResults');
-                localStorage.removeItem('finalResults');
-                
-                if (mode === 'immediate') {
-                    window.location.href = 'immediate-mode.html';
-                } else {
-                    window.location.href = 'final-mode.html';
-                }
+        function selectMode(mode) {
+            // Sin confirmación: solo iniciar
+            localStorage.setItem('examMode', mode);
+            localStorage.setItem('examStartTime', Date.now());
+            localStorage.setItem('timeLeft', '3600');
+            // Limpiar respuestas previas para evitar mezcla
+            localStorage.removeItem('immediateAnswers');
+            localStorage.removeItem('finalAnswers');
+            localStorage.removeItem('immediateResults');
+            localStorage.removeItem('finalResults');
+            
+            if (mode === 'immediate') {
+                window.location.href = 'immediate-mode.html';
+            } else {
+                window.location.href = 'final-mode.html';
             }
         }
         
