@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retroalimentación Inmediata</title>
+    <title>Modo Inmediato • Simulador NetSuite</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .navigation-buttons {
@@ -29,25 +29,31 @@
             margin-top: 1rem;
         }
         
-        .answered-status {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-top: 0.5rem;
+        .header-compact .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-compact .timer-container {
+            text-align: right;
         }
     </style>
 </head>
 <body>
-    <div class="header">
+    <!-- Header Compacto -->
+    <div class="header-compact">
         <div class="container">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" style="height: 40px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div class="logo-container">
+                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
-                        <h1 class="title" style="font-size: 1.5rem;">Modo Retroalimentación Inmediata</h1>
+                        <h1 class="title">Modo Inmediato</h1>
+                        <p class="subtitle-text" style="color:#0077C5; font-weight:500; font-size:0.7rem;">Feedback por pregunta</p>
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <div id="timer" style="font-size: 1.3rem; font-weight: 600; color: #0077C5;">60:00</div>
+                <div class="timer-container">
+                    <div id="timer" style="font-size: 1rem; font-weight: 600; color: #0077C5;">60:00</div>
                 </div>
             </div>
         </div>
@@ -56,9 +62,9 @@
     <div class="container">
         <div class="exam-card">
             <div class="progress">
-                <span>Pregunta <span id="current-q-num">1</span> de <span id="total-q">0</span></span>
+                <span style="font-size: 0.9rem;">Pregunta <span id="current-q-num">1</span> de <span id="total-q">0</span></span>
                 <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-                <span id="score-display">0%</span>
+                <span id="score-display" style="font-size: 0.9rem;">0%</span>
             </div>
             
             <div id="question-container"></div>
@@ -66,14 +72,14 @@
             <div id="feedback-container"></div>
             
             <div class="navigation-buttons">
-                <button onclick="previousQuestion()" id="prev-btn" class="btn-nav" style="background: #64748b;">◀ Anterior</button>
-                <button onclick="checkAnswer()" id="check-btn" class="btn-submit">✓ Verificar Respuesta</button>
-                <button onclick="nextQuestion()" id="next-btn" class="btn-submit">Siguiente ▶</button>
+                <button onclick="previousQuestion()" id="prev-btn" class="btn-nav" style="background: #64748b; padding: 8px 20px;">◀ Anterior</button>
+                <button onclick="checkAnswer()" id="check-btn" class="btn-submit" style="padding: 8px 20px;">✓ Verificar</button>
+                <button onclick="nextQuestion()" id="next-btn" class="btn-submit" style="padding: 8px 20px;">Siguiente ▶</button>
             </div>
             
-            <div class="footer" style="margin-top: 2rem;">
-                <button onclick="finishExam()" class="btn-submit">Finalizar Examen</button>
-                <button onclick="goHome()" class="btn-reset">Volver al Inicio</button>
+            <div class="footer" style="margin-top: 1.5rem;">
+                <button onclick="finishExam()" class="btn-submit" style="padding: 8px 20px;">Finalizar</button>
+                <button onclick="goHome()" class="btn-reset" style="padding: 8px 20px;">Inicio</button>
             </div>
         </div>
     </div>
@@ -130,9 +136,9 @@
             let html = `
                 <div class="question">
                     <div class="question-header">
-                        <div class="question-number">${question.id}</div>
-                        <div class="question-text">${escapeHtml(question.text)}</div>
-                        ${question.type === "multi" ? `<div class="multi-label">Elige ${question.correct.length} respuesta(s)</div>` : ""}
+                        <div class="question-number" style="width: 35px; height: 35px; font-size: 1rem;">${question.id}</div>
+                        <div class="question-text" style="font-size: 1rem;">${escapeHtml(question.text)}</div>
+                        ${question.type === "multi" ? `<div class="multi-label" style="font-size: 0.7rem;">Elige ${question.correct.length}</div>` : ""}
                     </div>
                     <div class="options">
             `;
@@ -143,10 +149,10 @@
                 const name = question.type === "single" ? `name="q${question.id}"` : "";
                 
                 html += `
-                    <label class="option">
+                    <label class="option" style="padding: 10px 14px;">
                         <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
                                 onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}')">
-                        <span class="option-label">${escapeHtml(opt.label)}</span>
+                        <span class="option-label" style="font-size: 0.9rem;">${escapeHtml(opt.label)}</span>
                     </label>
                 `;
             });
@@ -178,7 +184,6 @@
                 }
             }
             
-            // Guardar en localStorage
             localStorage.setItem('immediateAnswers', JSON.stringify(userAnswers));
             updateProgress();
         }
@@ -209,15 +214,14 @@
             
             const feedbackDiv = document.getElementById('feedback-container');
             feedbackDiv.innerHTML = `
-                <div class="${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}">
+                <div class="${isCorrect ? 'feedback-correct' : 'feedback-incorrect'}" style="padding: 0.75rem; font-size: 0.9rem;">
                     <strong>${isCorrect ? '✓ ¡Correcto!' : '✗ Incorrecto'}</strong><br>
                     <strong>Tu respuesta:</strong> ${userText}<br>
-                    <strong>Respuesta correcta:</strong> ${correctText}<br>
-                    ${question.explanation ? `<strong>Explicación:</strong> ${question.explanation}` : ''}
+                    <strong>Correcta:</strong> ${correctText}<br>
+                    ${question.explanation ? `<strong>Explicación:</strong> ${question.explanation.substring(0, 150)}${question.explanation.length > 150 ? '...' : ''}` : ''}
                 </div>
             `;
             
-            // Guardar resultado
             questionResults[question.id] = {
                 isCorrect: isCorrect,
                 userAnswer: userAnswer,
@@ -252,7 +256,6 @@
         function finishExam() {
             clearInterval(timerInterval);
             
-            // Asegurar que todas las preguntas tengan resultado
             QUESTIONS_DB.forEach(q => {
                 if (!questionResults[q.id]) {
                     const userAnswer = userAnswers[q.id] || [];

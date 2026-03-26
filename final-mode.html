@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Examen Completo</title>
+    <title>Modo Examen • Simulador NetSuite</title>
     <link rel="stylesheet" href="styles.css">
     <style>
         .exam-questions {
@@ -24,47 +24,60 @@
         .warning-message {
             background: #fef3c7;
             border-left: 4px solid #f59e0b;
-            padding: 1rem;
+            padding: 0.75rem;
             border-radius: 8px;
             margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .header-compact .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-compact .timer-container {
+            text-align: right;
         }
     </style>
 </head>
 <body>
-    <div class="header">
+    <!-- Header Compacto -->
+    <div class="header-compact">
         <div class="container">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" style="height: 40px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div class="logo-container">
+                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
-                        <h1 class="title" style="font-size: 1.5rem;">Examen Completo</h1>
+                        <h1 class="title">Examen Completo</h1>
+                        <p class="subtitle-text" style="color:#0077C5; font-weight:500; font-size:0.7rem;">50 preguntas • 60 min</p>
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <div id="timer" style="font-size: 1.3rem; font-weight: 600; color: #0077C5;">60:00</div>
-                    <div id="answered-counter" style="font-size: 0.9rem;">0 respondidas</div>
+                <div class="timer-container">
+                    <div id="timer" style="font-size: 1rem; font-weight: 600; color: #0077C5;">60:00</div>
+                    <div id="answered-counter" style="font-size: 0.7rem;">0 respondidas</div>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="container">
-        <div class="exam-card">
-            <div class="progress">
-                <span>Progreso</span>
+        <div class="exam-card" style="padding: 1.5rem;">
+            <div class="progress" style="margin-bottom: 1rem;">
+                <span style="font-size: 0.9rem;">Progreso</span>
                 <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
-                <span id="progress-percent">0%</span>
+                <span id="progress-percent" style="font-size: 0.9rem;">0%</span>
             </div>
             
             <div class="exam-questions" id="questions-container"></div>
             
             <div class="submit-section">
                 <div class="warning-message" id="warning-message" style="display:none;">
-                    Te faltan responder algunas preguntas. Revisa antes de finalizar.
+                    ⚠️ Te faltan responder algunas preguntas
                 </div>
                 <div class="footer">
-                    <button onclick="submitExam()" class="btn-submit">Finalizar Examen</button>
-                    <button onclick="goHome()" class="btn-reset">Volver al Inicio</button>
+                    <button onclick="submitExam()" class="btn-submit" style="padding: 8px 20px;">Finalizar</button>
+                    <button onclick="goHome()" class="btn-reset" style="padding: 8px 20px;">Inicio</button>
                 </div>
             </div>
         </div>
@@ -80,7 +93,6 @@
         function init() {
             totalQuestions = QUESTIONS_DB.length;
             
-            // Cargar respuestas guardadas
             const savedAnswers = localStorage.getItem('finalAnswers');
             if (savedAnswers) {
                 userAnswers = JSON.parse(savedAnswers);
@@ -119,11 +131,11 @@
             
             QUESTIONS_DB.forEach((q, index) => {
                 html += `
-                    <div class="question" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                    <div class="question" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
                         <div class="question-header">
-                            <div class="question-number">${q.id}</div>
-                            <div class="question-text">${escapeHtml(q.text)}</div>
-                            ${q.type === "multi" ? `<div class="multi-label">Elige ${q.correct.length} respuesta(s)</div>` : ""}
+                            <div class="question-number" style="width: 32px; height: 32px; font-size: 0.9rem;">${q.id}</div>
+                            <div class="question-text" style="font-size: 0.95rem;">${escapeHtml(q.text)}</div>
+                            ${q.type === "multi" ? `<div class="multi-label" style="font-size: 0.7rem;">Elige ${q.correct.length}</div>` : ""}
                         </div>
                         <div class="options">
                 `;
@@ -134,10 +146,10 @@
                     const name = q.type === "single" ? `name="q${q.id}"` : "";
                     
                     html += `
-                        <label class="option">
+                        <label class="option" style="padding: 8px 12px;">
                             <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
                                     onchange="saveAnswer(${q.id}, '${opt.value}', '${q.type}')">
-                            <span class="option-label">${escapeHtml(opt.label)}</span>
+                            <span class="option-label" style="font-size: 0.85rem;">${escapeHtml(opt.label)}</span>
                         </label>
                     `;
                 });
@@ -171,7 +183,7 @@
             
             document.getElementById('progress-fill').style.width = `${percentage}%`;
             document.getElementById('progress-percent').textContent = `${Math.round(percentage)}%`;
-            document.getElementById('answered-counter').textContent = `${answeredCount} de ${totalQuestions} respondidas`;
+            document.getElementById('answered-counter').textContent = `${answeredCount}/${totalQuestions}`;
             
             const warningMsg = document.getElementById('warning-message');
             if (answeredCount < totalQuestions) {
@@ -184,7 +196,6 @@
         function submitExam() {
             clearInterval(timerInterval);
             
-            // Calcular resultados
             let correctCount = 0;
             const questionResults = {};
             

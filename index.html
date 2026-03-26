@@ -56,38 +56,31 @@
             text-align: left;
         }
         
-        .btn-start {
-            background: #0077C5;
-            color: white;
-            padding: 12px 24px;
-            border: none;
-            border-radius: 9999px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 1rem;
-            transition: all 0.3s ease;
+        .header-compact .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
-        .btn-start:hover {
-            background: #005a94;
-            transform: translateY(-2px);
+        .header-compact .timer-container {
+            text-align: right;
         }
     </style>
 </head>
 <body>
-    <div class="header">
+    <!-- Header Compacto -->
+    <div class="header-compact">
         <div class="container">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="netsuite_logo.jpg" alt="NetSuite" style="height: 48px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div class="logo-container">
+                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
-                        <h1 class="title">Simulador de Examen</h1>
-                        <p style="color:#0077C5; font-weight:600;">Oracle NetSuite SuiteFoundation – Practice Exam</p>
+                        <h1 class="title">Simulador SuiteFoundation</h1>
+                        <p class="subtitle-text" style="color:#0077C5; font-weight:500; font-size:0.8rem;">Practice Exam</p>
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <div id="question-count" style="font-size: 1.1rem; font-weight: 500;">Cargando...</div>
+                <div class="timer-container">
+                    <div id="question-count" style="font-size: 0.9rem; font-weight: 500;">Cargando...</div>
                 </div>
             </div>
         </div>
@@ -95,30 +88,28 @@
 
     <div class="container">
         <div class="exam-card">
-            <h2 style="text-align:center; margin-bottom:1rem;">Elige tu modo de estudio</h2>
+            <h2 style="text-align:center; margin-bottom:1rem; font-size: 1.5rem;">Elige tu modo de estudio</h2>
             
             <div class="mode-selector">
                 <div class="mode-card" onclick="selectMode('immediate')">
-                    <div class="mode-icon"></div>
                     <div class="mode-title">Retroalimentación Inmediata</div>
                     <div class="mode-desc">Ver respuesta correcta después de cada pregunta</div>
                     <div class="mode-desc" style="margin-top: 0.5rem;">✓ Pregunta por pregunta<br>✓ Feedback instantáneo<br>✓ Repaso de errores</div>
                 </div>
                 
                 <div class="mode-card" onclick="selectMode('final')">
-                    <div class="mode-icon"></div>
                     <div class="mode-title">Resultados al Final</div>
                     <div class="mode-desc">Evaluación completa al terminar</div>
-                    <div class="mode-desc" style="margin-top: 0.5rem;">✓ Todas las preguntas juntas<br>✓ Simula examen<br>✓ Resultados detallados</div>
+                    <div class="mode-desc" style="margin-top: 0.5rem;">✓ Todas las preguntas juntas<br>✓ Simula examen real<br>✓ Resultados detallados</div>
                 </div>
             </div>
             
             <div class="info-box">
-                <h3 style="margin-bottom: 0.5rem;">Información del Examen:</h3>
-                <p>• <span id="total-questions-display">0</span> preguntas reales del examen SuiteFoundation</p>
-                <p>• Algunas preguntas requieren seleccionar 2 respuestas</p>
-                <p>• Tiempo recomendado: 60 minutos</p>
-                <p>• Puedes repasar solo las preguntas incorrectas al final</p>
+                <h3 style="margin-bottom: 0.5rem; font-size: 1.1rem;">Información del Examen:</h3>
+                <p style="font-size: 0.9rem;">• <span id="total-questions-display">0</span> preguntas reales del examen SuiteFoundation</p>
+                <p style="font-size: 0.9rem;">• Algunas preguntas requieren seleccionar 2 respuestas</p>
+                <p style="font-size: 0.9rem;">• Tiempo recomendado: 60 minutos</p>
+                <p style="font-size: 0.9rem;">• Puedes repasar solo las preguntas incorrectas al final</p>
             </div>
         </div>
     </div>
@@ -130,7 +121,7 @@
         function loadQuestions() {
             if (typeof QUESTIONS_DB !== 'undefined') {
                 totalQuestions = QUESTIONS_DB.length;
-                document.getElementById('question-count').textContent = `${totalQuestions} preguntas • 60 minutos`;
+                document.getElementById('question-count').innerHTML = `${totalQuestions} preguntas • 60 min`;
                 document.getElementById('total-questions-display').textContent = totalQuestions;
             } else {
                 setTimeout(loadQuestions, 100);
