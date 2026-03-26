@@ -113,7 +113,7 @@
             </div>
             
             <div class="filter-buttons">
-                <button class="filter-btn active" onclick="filterResults('all')">Todas</button>
+                <button class="filter-btn active" onclick="filterResults('all')">📋 Todas</button>
                 <button class="filter-btn" onclick="filterResults('correct')">✅ Correctas</button>
                 <button class="filter-btn" onclick="filterResults('incorrect')">❌ Incorrectas</button>
             </div>
@@ -154,13 +154,13 @@
             document.getElementById('score-text').innerHTML = `${percentage}<span style="font-size:1rem;">%</span>`;
             
             if (percentage >= 80) {
-                document.getElementById('result-message').innerHTML = "¡Excelente!";
+                document.getElementById('result-message').innerHTML = "🎓 ¡Excelente!";
             } else if (percentage >= 70) {
-                document.getElementById('result-message').innerHTML = "¡Muy bien!";
+                document.getElementById('result-message').innerHTML = "👍 ¡Muy bien!";
             } else if (percentage >= 60) {
-                document.getElementById('result-message').innerHTML = "Buen intento";
+                document.getElementById('result-message').innerHTML = "📚 Buen intento";
             } else {
-                document.getElementById('result-message').innerHTML = "Sigue practicando";
+                document.getElementById('result-message').innerHTML = "💪 Sigue practicando";
             }
             
             document.getElementById('result-details').innerHTML = `${correctCount} de ${totalQuestions} correctas (${percentage}%)`;
@@ -200,4 +200,69 @@
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <div style="font-size: 1.2rem;">${result.isCorrect ? "✅" : "❌"}</div>
                             <div style="flex: 1;">
-                                <strong style="font-size: 0.9rem;">Preg
+                                <strong style="font-size: 0.9rem;">Pregunta ${q.id}</strong>
+                                <div style="font-size: 0.8rem;">${escapeHtml(q.text.substring(0, 80))}${q.text.length > 80 ? '...' : ''}</div>
+                                <div style="font-size: 0.75rem; margin-top: 2px; color: ${result.isCorrect ? '#10b981' : '#ef4444'}">
+                                    Tu: ${userText}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="detail-${q.id}" class="detail-expanded">
+                        <strong>✅ Correcta:</strong> ${correctText}<br>
+                        ${q.explanation ? `<strong>📖 Explicación:</strong> ${q.explanation.substring(0, 150)}${q.explanation.length > 150 ? '...' : ''}` : ''}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        function toggleDetail(questionId) {
+            const detailDiv = document.getElementById(`detail-${questionId}`);
+            if (detailDiv.style.display === 'none' || detailDiv.style.display === '') {
+                detailDiv.style.display = 'block';
+            } else {
+                detailDiv.style.display = 'none';
+            }
+        }
+        
+        function filterResults(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderResults();
+        }
+        
+        function reviewWrong() {
+            const wrongQuestions = QUESTIONS_DB.filter(q => {
+                const result = questionResults[q.id];
+                return result && !result.isCorrect;
+            });
+            
+            if (wrongQuestions.length === 0) {
+                alert("🎉 ¡No tienes respuestas incorrectas!");
+                return;
+            }
+            
+            localStorage.setItem('reviewQuestions', JSON.stringify(wrongQuestions.map(q => q.id)));
+            window.location.href = 'immediate-mode.html?review=true';
+        }
+        
+        function goHome() {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        init();
+    </script>
+</body>
+</html>
