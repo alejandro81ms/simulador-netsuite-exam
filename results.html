@@ -92,7 +92,7 @@
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div class="logo-container">
-                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
+                    <img src="netsuite_logo.jpg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
                         <h1 class="title">Resultados</h1>
                         <p class="subtitle-text" style="color:#0077C5; font-weight:500; font-size:0.7rem;">SuiteFoundation Exam</p>
@@ -154,13 +154,13 @@
             document.getElementById('score-text').innerHTML = `${percentage}<span style="font-size:1rem;">%</span>`;
             
             if (percentage >= 80) {
-                document.getElementById('result-message').innerHTML = "🎓 ¡Excelente!";
+                document.getElementById('result-message').innerHTML = "¡Excelente!";
             } else if (percentage >= 70) {
-                document.getElementById('result-message').innerHTML = "👍 ¡Muy bien!";
+                document.getElementById('result-message').innerHTML = "¡Muy bien!";
             } else if (percentage >= 60) {
-                document.getElementById('result-message').innerHTML = "📚 Buen intento";
+                document.getElementById('result-message').innerHTML = "Buen intento";
             } else {
-                document.getElementById('result-message').innerHTML = "💪 Sigue practicando";
+                document.getElementById('result-message').innerHTML = "Sigue practicando";
             }
             
             document.getElementById('result-details').innerHTML = `${correctCount} de ${totalQuestions} correctas (${percentage}%)`;
@@ -210,7 +210,7 @@
                     </div>
                     <div id="detail-${q.id}" class="detail-expanded">
                         <strong>✅ Correcta:</strong> ${correctText}<br>
-                        ${q.explanation ? `<strong>📖 Explicación:</strong> ${q.explanation.substring(0, 150)}${q.explanation.length > 150 ? '...' : ''}` : ''}
+                        ${q.explanation ? `<strong>Explicación:</strong> ${q.explanation.substring(0, 150)}${q.explanation.length > 150 ? '...' : ''}` : ''}
                     </div>
                 `;
             });
@@ -237,23 +237,27 @@
         }
         
         function reviewWrong() {
-            const wrongQuestions = QUESTIONS_DB.filter(q => {
-                const result = questionResults[q.id];
-                return result && !result.isCorrect;
-            });
-            
-            if (wrongQuestions.length === 0) {
-                alert("🎉 ¡No tienes respuestas incorrectas!");
-                return;
+            if (confirm("¿Repasar solo las preguntas incorrectas? Se iniciará un nuevo examen con esas preguntas.")) {
+                const wrongQuestions = QUESTIONS_DB.filter(q => {
+                    const result = questionResults[q.id];
+                    return result && !result.isCorrect;
+                });
+                
+                if (wrongQuestions.length === 0) {
+                    alert("🎉 ¡No tienes respuestas incorrectas!");
+                    return;
+                }
+                
+                localStorage.setItem('reviewQuestions', JSON.stringify(wrongQuestions.map(q => q.id)));
+                window.location.href = 'immediate-mode.html?review=true';
             }
-            
-            localStorage.setItem('reviewQuestions', JSON.stringify(wrongQuestions.map(q => q.id)));
-            window.location.href = 'immediate-mode.html?review=true';
         }
         
         function goHome() {
-            localStorage.clear();
-            window.location.href = 'index.html';
+            if (confirm("¿Volver al inicio? Se borrarán todos los resultados.")) {
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
         }
         
         function escapeHtml(text) {

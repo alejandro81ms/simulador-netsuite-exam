@@ -46,7 +46,7 @@
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                 <div class="logo-container">
-                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
+                    <img src="netsuite_logo.jpg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
                         <h1 class="title">Modo Inmediato</h1>
                         <p class="subtitle-text" style="color:#0077C5; font-weight:500; font-size:0.7rem;">Feedback por pregunta</p>
@@ -78,8 +78,8 @@
             </div>
             
             <div class="footer" style="margin-top: 1.5rem;">
-                <button onclick="finishExam()" class="btn-submit" style="padding: 8px 20px;">Finalizar</button>
-                <button onclick="goHome()" class="btn-reset" style="padding: 8px 20px;">Inicio</button>
+                <button onclick="finishExam()" class="btn-submit" style="padding: 8px 20px;">🏁 Finalizar</button>
+                <button onclick="goHome()" class="btn-reset" style="padding: 8px 20px;">🏠 Inicio</button>
             </div>
         </div>
     </div>
@@ -151,7 +151,7 @@
                 html += `
                     <label class="option" style="padding: 10px 14px;">
                         <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
-                                onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}')">
+                               onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}', this)">
                         <span class="option-label" style="font-size: 0.9rem;">${escapeHtml(opt.label)}</span>
                     </label>
                 `;
@@ -171,16 +171,28 @@
             updateProgress();
         }
         
-        function saveAnswer(qId, value, type) {
-            if (!userAnswers[qId]) userAnswers[qId] = [];
+        // Función para guardar respuesta con control de límite en multi
+        function saveAnswer(qId, value, type, inputElement) {
+            const question = QUESTIONS_DB.find(q => q.id === qId);
+            if (!question) return;
             
             if (type === "single") {
                 userAnswers[qId] = [value];
             } else {
-                if (userAnswers[qId].includes(value)) {
-                    userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
-                } else {
+                // multi: controlar el número máximo de selecciones
+                if (!userAnswers[qId]) userAnswers[qId] = [];
+                
+                if (inputElement.checked) {
+                    // Si ya se alcanzó el límite, desmarcar y mostrar alerta
+                    if (userAnswers[qId].length >= question.correct.length) {
+                        inputElement.checked = false;
+                        alert(`Solo puedes seleccionar ${question.correct.length} opción(es) para esta pregunta.`);
+                        return;
+                    }
                     userAnswers[qId].push(value);
+                } else {
+                    // Desmarcar: eliminar valor
+                    userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
                 }
             }
             
@@ -254,34 +266,38 @@
         }
         
         function finishExam() {
-            clearInterval(timerInterval);
-            
-            QUESTIONS_DB.forEach(q => {
-                if (!questionResults[q.id]) {
-                    const userAnswer = userAnswers[q.id] || [];
-                    let isCorrect = false;
-                    if (q.type === "single") {
-                        isCorrect = userAnswer[0] === q.correct;
-                    } else {
-                        isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correct.sort());
+            if (confirm("¿Estás seguro de finalizar el examen? Se guardarán tus resultados.")) {
+                clearInterval(timerInterval);
+                
+                QUESTIONS_DB.forEach(q => {
+                    if (!questionResults[q.id]) {
+                        const userAnswer = userAnswers[q.id] || [];
+                        let isCorrect = false;
+                        if (q.type === "single") {
+                            isCorrect = userAnswer[0] === q.correct;
+                        } else {
+                            isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correct.sort());
+                        }
+                        questionResults[q.id] = {
+                            isCorrect: isCorrect,
+                            userAnswer: userAnswer,
+                            correctAnswer: q.correct
+                        };
                     }
-                    questionResults[q.id] = {
-                        isCorrect: isCorrect,
-                        userAnswer: userAnswer,
-                        correctAnswer: q.correct
-                    };
-                }
-            });
-            
-            localStorage.setItem('finalResults', JSON.stringify(questionResults));
-            localStorage.setItem('totalQuestions', totalQuestions);
-            window.location.href = 'results.html';
+                });
+                
+                localStorage.setItem('finalResults', JSON.stringify(questionResults));
+                localStorage.setItem('totalQuestions', totalQuestions);
+                window.location.href = 'results.html';
+            }
         }
         
         function goHome() {
-            clearInterval(timerInterval);
-            localStorage.clear();
-            window.location.href = 'index.html';
+            if (confirm("¿Volver al inicio? Se perderá el progreso actual.")) {
+                clearInterval(timerInterval);
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
         }
         
         function escapeHtml(text) {

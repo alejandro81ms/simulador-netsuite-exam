@@ -19,25 +19,37 @@ body {
     line-height: 1.6;
 }
 
-.header {
+.header-compact {
     background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    padding: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    padding: 0.75rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
+}
+
+.header-compact .container {
+    padding: 0 2rem;
+}
+
+.header-compact .title {
+    font-size: 1.2rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.header-compact .netsuite-logo {
+    height: 32px;
+}
+
+.header-compact .subtitle-text {
+    font-size: 0.7rem;
 }
 
 .container {
     max-width: 1000px;
     margin: 0 auto;
     padding: 2rem;
-}
-
-.title {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: var(--netsuite-blue);
 }
 
 .exam-card {
@@ -213,75 +225,32 @@ button:disabled {
     .container {
         padding: 1rem;
     }
-    
     .exam-card {
         padding: 1.5rem;
     }
-    
     .question-text {
         font-size: 1rem;
     }
-    
     .option {
         padding: 10px 14px;
     }
-    
     button {
         padding: 8px 16px;
         font-size: 0.9rem;
     }
-}
-
-
-
-
-
-/* Header compacto */
-.header-compact {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    padding: 0.75rem 0;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.header-compact .container {
-    padding: 0 2rem;
-}
-
-.header-compact .title {
-    font-size: 1.2rem;
-    margin: 0;
-}
-
-.header-compact .netsuite-logo {
-    height: 32px;
-}
-
-.header-compact .subtitle-text {
-    font-size: 0.8rem;
-}
-
-.header-compact .timer {
-    font-size: 1rem !important;
-}
-
-/* Media queries para móvil */
-@media (max-width: 768px) {
     .header-compact {
         padding: 0.5rem 0;
     }
-    
+    .header-compact .container {
+        padding: 0 1rem;
+    }
     .header-compact .title {
         font-size: 1rem;
     }
-    
     .header-compact .netsuite-logo {
         height: 24px;
     }
-    
-    .header-compact .timer {
-        font-size: 0.9rem !important;
+    .header-compact .subtitle-text {
+        font-size: 0.6rem;
     }
 }

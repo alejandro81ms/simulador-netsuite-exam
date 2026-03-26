@@ -47,7 +47,7 @@
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                 <div class="logo-container">
-                    <img src="https://www.netsuite.com/portal/common/images/logo-oracle-netsuite.svg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
+                    <img src="netsuite_logo.jpg" alt="NetSuite" class="netsuite-logo" style="height: 32px;">
                     <div>
                         <h1 class="title">Examen Completo</h1>
                         <p class="subtitle-text" style="color:#0077C5; font-weight:500; font-size:0.7rem;">50 preguntas • 60 min</p>
@@ -73,7 +73,7 @@
             
             <div class="submit-section">
                 <div class="warning-message" id="warning-message" style="display:none;">
-                    ⚠️ Te faltan responder algunas preguntas
+                    Te faltan responder algunas preguntas
                 </div>
                 <div class="footer">
                     <button onclick="submitExam()" class="btn-submit" style="padding: 8px 20px;">Finalizar</button>
@@ -148,7 +148,7 @@
                     html += `
                         <label class="option" style="padding: 8px 12px;">
                             <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
-                                    onchange="saveAnswer(${q.id}, '${opt.value}', '${q.type}')">
+                                    onchange="saveAnswer(${q.id}, '${opt.value}', '${q.type}', this)">
                             <span class="option-label" style="font-size: 0.85rem;">${escapeHtml(opt.label)}</span>
                         </label>
                     `;
@@ -160,16 +160,24 @@
             container.innerHTML = html;
         }
         
-        function saveAnswer(qId, value, type) {
-            if (!userAnswers[qId]) userAnswers[qId] = [];
+        function saveAnswer(qId, value, type, inputElement) {
+            const question = QUESTIONS_DB.find(q => q.id === qId);
+            if (!question) return;
             
             if (type === "single") {
                 userAnswers[qId] = [value];
             } else {
-                if (userAnswers[qId].includes(value)) {
-                    userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
-                } else {
+                if (!userAnswers[qId]) userAnswers[qId] = [];
+                
+                if (inputElement.checked) {
+                    if (userAnswers[qId].length >= question.correct.length) {
+                        inputElement.checked = false;
+                        alert(`Solo puedes seleccionar ${question.correct.length} opción(es) para esta pregunta.`);
+                        return;
+                    }
                     userAnswers[qId].push(value);
+                } else {
+                    userAnswers[qId] = userAnswers[qId].filter(v => v !== value);
                 }
             }
             
@@ -194,41 +202,45 @@
         }
         
         function submitExam() {
-            clearInterval(timerInterval);
-            
-            let correctCount = 0;
-            const questionResults = {};
-            
-            QUESTIONS_DB.forEach(q => {
-                const userAnswer = userAnswers[q.id] || [];
-                let isCorrect = false;
+            if (confirm("¿Finalizar el examen? Se calcularán tus resultados.")) {
+                clearInterval(timerInterval);
                 
-                if (q.type === "single") {
-                    isCorrect = userAnswer[0] === q.correct;
-                } else {
-                    isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correct.sort());
-                }
+                let correctCount = 0;
+                const questionResults = {};
                 
-                if (isCorrect) correctCount++;
+                QUESTIONS_DB.forEach(q => {
+                    const userAnswer = userAnswers[q.id] || [];
+                    let isCorrect = false;
+                    
+                    if (q.type === "single") {
+                        isCorrect = userAnswer[0] === q.correct;
+                    } else {
+                        isCorrect = JSON.stringify(userAnswer.sort()) === JSON.stringify(q.correct.sort());
+                    }
+                    
+                    if (isCorrect) correctCount++;
+                    
+                    questionResults[q.id] = {
+                        isCorrect: isCorrect,
+                        userAnswer: userAnswer,
+                        correctAnswer: q.correct
+                    };
+                });
                 
-                questionResults[q.id] = {
-                    isCorrect: isCorrect,
-                    userAnswer: userAnswer,
-                    correctAnswer: q.correct
-                };
-            });
-            
-            localStorage.setItem('finalResults', JSON.stringify(questionResults));
-            localStorage.setItem('totalQuestions', totalQuestions);
-            localStorage.setItem('correctCount', correctCount);
-            
-            window.location.href = 'results.html';
+                localStorage.setItem('finalResults', JSON.stringify(questionResults));
+                localStorage.setItem('totalQuestions', totalQuestions);
+                localStorage.setItem('correctCount', correctCount);
+                
+                window.location.href = 'results.html';
+            }
         }
         
         function goHome() {
-            clearInterval(timerInterval);
-            localStorage.clear();
-            window.location.href = 'index.html';
+            if (confirm("¿Volver al inicio? Se perderá el progreso actual.")) {
+                clearInterval(timerInterval);
+                localStorage.clear();
+                window.location.href = 'index.html';
+            }
         }
         
         function escapeHtml(text) {
