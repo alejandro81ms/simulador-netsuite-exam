@@ -1,0 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --netsuite-blue: #0077C5;
+    --correct-green: #10b981;
+    --incorrect-red: #ef4444;
+    --warning-yellow: #f59e0b;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: linear-gradient(135deg, #f8f9fc, #e6f0ff);
+    color: #1e2937;
+    line-height: 1.6;
+}
+
+.header {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--netsuite-blue);
+}
+
+.exam-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 119, 197, 0.1);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.config-btn {
+    transition: all 0.3s ease;
+}
+
+.config-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    font-weight: 500;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.progress-bar {
+    height: 10px;
+    background: #e2e8f0;
+    border-radius: 9999px;
+    flex: 1;
+    min-width: 150px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0077C5, #00b4ff);
+    width: 0%;
+    transition: width 0.4s ease;
+}
+
+.question {
+    margin-bottom: 2rem;
+}
+
+.question-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.question-number {
+    background: var(--netsuite-blue);
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.question-text {
+    font-size: 1.2rem;
+    font-weight: 600;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.multi-label {
+    color: #e11d48;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: #fee2e2;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    align-self: center;
+}
+
+.options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-left: 0;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.option:hover {
+    border-color: #0077C5;
+    background: #f0f9ff;
+    transform: translateX(4px);
+}
+
+.option input {
+    width: 20px;
+    height: 20px;
+    accent-color: #0077C5;
+    cursor: pointer;
+}
+
+.option-label {
+    font-size: 1rem;
+    flex: 1;
+    cursor: pointer;
+}
+
+.feedback {
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.feedback-correct {
+    background: #d1fae5;
+    border-left: 4px solid var(--correct-green);
+    color: #065f46;
+}
+
+.feedback-incorrect {
+    background: #fee2e2;
+    border-left: 4px solid var(--incorrect-red);
+    color: #991b1b;
+}
+
+.feedback-info {
+    background: #e0f2fe;
+    border-left: 4px solid var(--netsuite-blue);
+    color: #075985;
+}
+
+.footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+}
+
+button {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-submit {
+    background: #0077C5;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #005a94;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 119, 197, 0.3);
+}
+
+.btn-reset {
+    background: white;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-reset:hover {
+    border-color: #0077C5;
+    color: #0077C5;
+    transform: translateY(-2px);
+}
+
+.btn-nav {
+    background: #64748b;
+    color: white;
+}
+
+.btn-nav:hover:not(:disabled) {
+    background: #475569;
+    transform: translateY(-2px);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.results {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 119, 197, 0.1);
+}
+
+.score-circle {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 3rem;
+    font-weight: 700;
+    position: relative;
+    background: conic-gradient(var(--netsuite-blue) 0deg, #e2e8f0 0deg);
+}
+
+.result-item {
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+.result-item:hover {
+    transform: translateX(4px);
+}
+
+.correct { 
+    background: #ecfdf5; 
+    border-left: 4px solid var(--correct-green);
+}
+
+.incorrect { 
+    background: #fef2f2; 
+    border-left: 4px solid var(--incorrect-red);
+}
+
+.result-badge {
+    font-size: 1.5rem;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+    
+    .exam-card {
+        padding: 1.5rem;
+    }
+    
+    .question-text {
+        font-size: 1rem;
+    }
+    
+    .option {
+        padding: 10px 14px;
+    }
+    
+    button {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .progress {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer {
+        flex-direction: column;
+    }
+    
+    .footer button {
+        width: 100%;
+    }
+}
