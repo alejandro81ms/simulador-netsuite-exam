@@ -11,6 +11,7 @@ let totalQuestions = 0;
 function init() {
     totalQuestions = QUESTIONS_DB.length;
     document.getElementById('total-q').textContent = totalQuestions;
+    document.getElementById('total-questions').textContent = totalQuestions;
     document.getElementById('question-counter').textContent = `${totalQuestions} preguntas • 60 minutos`;
 }
 
@@ -21,17 +22,22 @@ function startExam(mode) {
     questionResults = {};
     timeLeft = 3600;
     
+    // Resetear timer display
+    document.getElementById("timer").textContent = "60:00";
+    
     // Ocultar pantalla de configuración
     document.getElementById('config-screen').style.display = 'none';
     
     if (mode === 'immediate') {
         // Modo pregunta por pregunta con feedback inmediato
         document.getElementById('single-question-mode').style.display = 'block';
+        document.getElementById('full-exam-mode').style.display = 'none';
         startTimer();
         renderCurrentQuestion();
     } else {
         // Modo examen completo al final
-        document.getElementById('quiz-container').style.display = 'block';
+        document.getElementById('single-question-mode').style.display = 'none';
+        document.getElementById('full-exam-mode').style.display = 'block';
         startTimer();
         renderFullExam();
     }
@@ -90,17 +96,22 @@ function renderCurrentQuestion() {
     container.innerHTML = html;
     
     // Actualizar progreso
-    updateProgress();
+    updateImmediateProgress();
     
     // Gestionar botones de navegación
     document.getElementById('prev-btn').disabled = (currentIndex === 0);
     document.getElementById('next-btn').disabled = false;
     document.getElementById('check-btn').style.display = 'block';
+    document.getElementById('check-btn').textContent = '✓ Verificar Respuesta';
+    document.getElementById('check-btn').onclick = checkAnswer;
     
-    // Ocultar feedback si existe
+    // Ocultar feedback
     const feedbackDiv = document.getElementById('feedback');
     feedbackDiv.style.display = 'none';
     feedbackDiv.innerHTML = '';
+    
+    // Actualizar número de pregunta
+    document.getElementById('current-q-num').textContent = currentIndex + 1;
 }
 
 function saveAnswer(qId, value, type) {
@@ -117,7 +128,7 @@ function saveAnswer(qId, value, type) {
         }
     }
     
-    updateProgress();
+    updateImmediateProgress();
 }
 
 function checkAnswer() {
@@ -163,9 +174,6 @@ function checkAnswer() {
         </div>
     `;
     
-    // Actualizar progreso
-    updateProgress();
-    
     // Si es la última pregunta, cambiar botón de verificar a finalizar
     if (currentIndex === totalQuestions - 1) {
         document.getElementById('check-btn').textContent = '🏁 Finalizar Examen';
@@ -190,20 +198,6 @@ function previousQuestion() {
 function finishImmediateMode() {
     clearInterval(timerInterval);
     
-    // Verificar si falta alguna respuesta
-    const unanswered = [];
-    QUESTIONS_DB.forEach(q => {
-        if (!userAnswers[q.id] || userAnswers[q.id].length === 0) {
-            unanswered.push(q.id);
-        }
-    });
-    
-    if (unanswered.length > 0) {
-        if (!confirm(`⚠️ Te faltan responder ${unanswered.length} pregunta(s). ¿Deseas finalizar de todas formas?`)) {
-            return;
-        }
-    }
-    
     // Asegurar que todas las preguntas tengan resultado
     QUESTIONS_DB.forEach(q => {
         if (!questionResults[q.id]) {
@@ -225,14 +219,29 @@ function finishImmediateMode() {
     showResults();
 }
 
+function updateImmediateProgress() {
+    const answeredCount = Object.keys(userAnswers).filter(id => userAnswers[id] && userAnswers[id].length > 0).length;
+    const percentage = (answeredCount / totalQuestions) * 100;
+    
+    const progressFill = document.getElementById('single-progress-fill');
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
+    }
+    
+    const scoreDisplay = document.getElementById('score-display');
+    if (scoreDisplay) {
+        scoreDisplay.textContent = `${Math.round(percentage)}%`;
+    }
+}
+
 // ==================== MODO EXAMEN COMPLETO ====================
 function renderFullExam() {
-    const container = document.getElementById("questions");
+    const container = document.getElementById("full-exam-questions");
     container.innerHTML = "";
     
     QUESTIONS_DB.forEach((q, index) => {
         let html = `
-            <div class="question" id="q-${q.id}">
+            <div class="question" id="q-${q.id}" style="margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
                 <div class="question-header">
                     <div class="question-number">${q.id}</div>
                     <div class="question-text">${escapeHtml(q.text)}</div>
@@ -247,9 +256,9 @@ function renderFullExam() {
             const name = q.type === "single" ? `name="q${q.id}"` : "";
             
             html += `
-                <label class="option" onclick="toggleFullAnswer(${q.id}, '${opt.value}', '${q.type}')">
+                <label class="option">
                     <input type="${inputType}" ${name} value="${opt.value}" ${checked} 
-                           onchange="toggleFullAnswer(${q.id}, '${opt.value}', '${q.type}')">
+                           onchange="saveFullAnswer(${q.id}, '${opt.value}', '${q.type}')">
                     <span class="option-label">${escapeHtml(opt.label)}</span>
                 </label>
             `;
@@ -258,9 +267,11 @@ function renderFullExam() {
         html += `</div></div>`;
         container.innerHTML += html;
     });
+    
+    updateFullExamProgress();
 }
 
-function toggleFullAnswer(qId, value, type) {
+function saveFullAnswer(qId, value, type) {
     if (!userAnswers[qId]) userAnswers[qId] = [];
     
     if (type === "single") {
@@ -273,13 +284,34 @@ function toggleFullAnswer(qId, value, type) {
         }
     }
     
-    updateProgress();
+    updateFullExamProgress();
+}
+
+function updateFullExamProgress() {
+    const answeredCount = Object.keys(userAnswers).filter(id => userAnswers[id] && userAnswers[id].length > 0).length;
+    const percentage = (answeredCount / totalQuestions) * 100;
+    
+    const progressFill = document.getElementById('full-exam-progress');
+    if (progressFill) {
+        progressFill.style.width = `${percentage}%`;
+    }
+    
+    const percentSpan = document.getElementById('full-exam-percent');
+    if (percentSpan) {
+        percentSpan.textContent = `${Math.round(percentage)}%`;
+    }
+    
+    const answeredSpan = document.getElementById('answered-count');
+    if (answeredSpan) {
+        answeredSpan.textContent = answeredCount;
+    }
 }
 
 function submitFullExam() {
     clearInterval(timerInterval);
     
     let correctCount = 0;
+    
     QUESTIONS_DB.forEach(q => {
         const userAnswer = userAnswers[q.id] || [];
         let isCorrect = false;
@@ -304,20 +336,11 @@ function submitFullExam() {
 
 // ==================== RESULTADOS ====================
 function showResults() {
-    // Ocultar pantallas de examen
+    // Ocultar todas las pantallas de examen
     document.getElementById('single-question-mode').style.display = 'none';
-    if (document.getElementById('quiz-container')) {
-        const quizContainer = document.getElementById('quiz-container');
-        if (quizContainer) quizContainer.style.display = 'none';
-    }
+    document.getElementById('full-exam-mode').style.display = 'none';
     
-    const totalQuestions = QUESTIONS_DB.length;
-    let correctCount = 0;
-    
-    Object.values(questionResults).forEach(result => {
-        if (result.isCorrect) correctCount++;
-    });
-    
+    const correctCount = Object.values(questionResults).filter(r => r.isCorrect).length;
     const percentage = Math.round((correctCount / totalQuestions) * 100);
     
     // Actualizar score circle
@@ -438,6 +461,8 @@ function reviewWrongAnswers() {
     examMode = 'immediate';
     document.getElementById('results').style.display = 'none';
     document.getElementById('single-question-mode').style.display = 'block';
+    document.getElementById('full-exam-mode').style.display = 'none';
+    document.getElementById('total-q').textContent = wrongQuestions.length;
     startTimer();
     renderReviewQuestion();
 }
@@ -478,6 +503,8 @@ function renderReviewQuestion() {
     document.getElementById('check-btn').style.display = 'block';
     document.getElementById('check-btn').textContent = '✓ Verificar Respuesta';
     document.getElementById('check-btn').onclick = checkReviewAnswer;
+    document.getElementById('current-q-num').textContent = currentIndex + 1;
+    document.getElementById('total-q').textContent = window.reviewQuestions.length;
     
     const feedbackDiv = document.getElementById('feedback');
     feedbackDiv.style.display = 'none';
@@ -496,6 +523,11 @@ function saveReviewAnswer(qId, value, type) {
             userAnswers[qId].push(value);
         }
     }
+    
+    const answeredCount = Object.keys(userAnswers).filter(id => userAnswers[id] && userAnswers[id].length > 0).length;
+    const percentage = (answeredCount / window.reviewQuestions.length) * 100;
+    document.getElementById('single-progress-fill').style.width = `${percentage}%`;
+    document.getElementById('score-display').textContent = `${Math.round(percentage)}%`;
 }
 
 function checkReviewAnswer() {
@@ -545,26 +577,6 @@ function finishReview() {
     resetToConfig();
 }
 
-function updateProgress() {
-    const answeredCount = Object.keys(userAnswers).filter(id => userAnswers[id] && userAnswers[id].length > 0).length;
-    const percentage = (answeredCount / totalQuestions) * 100;
-    
-    const progressFill = document.getElementById('single-progress-fill') || document.getElementById('progress-fill');
-    if (progressFill) {
-        progressFill.style.width = `${percentage}%`;
-    }
-    
-    const scoreDisplay = document.getElementById('score-display');
-    if (scoreDisplay) {
-        scoreDisplay.textContent = `${Math.round(percentage)}%`;
-    }
-    
-    const currentQSpan = document.getElementById('current-q-num');
-    if (currentQSpan && examMode === 'immediate') {
-        currentQSpan.textContent = currentIndex + 1;
-    }
-}
-
 function resetToConfig() {
     // Detener timer
     if (timerInterval) clearInterval(timerInterval);
@@ -582,10 +594,8 @@ function resetToConfig() {
     document.getElementById('timer').textContent = '60:00';
     document.getElementById('config-screen').style.display = 'block';
     document.getElementById('single-question-mode').style.display = 'none';
+    document.getElementById('full-exam-mode').style.display = 'none';
     document.getElementById('results').style.display = 'none';
-    
-    const quizContainer = document.getElementById('quiz-container');
-    if (quizContainer) quizContainer.style.display = 'none';
 }
 
 function escapeHtml(text) {

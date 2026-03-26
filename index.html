@@ -11,14 +11,14 @@
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <img src="netsuite_logo.jpg" alt="NetSuite" style="height: 60px;">
+                    <img src="netsuite_logo.jpg" alt="NetSuite" style="height: 80px;">
                     <div>
                         <h1 class="title">Simulador de Examen</h1>
                         <p style="color:#0077C5; font-weight:600;">Oracle NetSuite SuiteFoundation – Practice Exam</p>
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 1.1rem; font-weight: 500;" id="question-counter">50 preguntas • 60 minutos</div>
+                    <div style="font-size: 1.1rem; font-weight: 500;" id="question-counter">Cargando...</div>
                     <div id="timer" style="font-size: 1.3rem; font-weight: 600; color: #0077C5;">60:00</div>
                 </div>
             </div>
@@ -36,11 +36,11 @@
                     <h3 style="margin-bottom: 1rem;">Modo de Estudio:</h3>
                     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
                         <button onclick="startExam('immediate')" class="config-btn" style="flex:1; padding: 1rem; background: #0077C5; color: white; border: none; border-radius: 12px; cursor: pointer;">
-                            Retroalimentación Inmediata<br>
+                            📝 Retroalimentación Inmediata<br>
                             <small style="font-size: 0.85rem;">Ver respuesta correcta después de cada pregunta</small>
                         </button>
                         <button onclick="startExam('final')" class="config-btn" style="flex:1; padding: 1rem; background: #2c3e50; color: white; border: none; border-radius: 12px; cursor: pointer;">
-                            Resultados al Final<br>
+                            📊 Resultados al Final<br>
                             <small style="font-size: 0.85rem;">Evaluación completa al terminar</small>
                         </button>
                     </div>
@@ -48,18 +48,18 @@
                 
                 <div style="background: #f8fafc; padding: 1rem; border-radius: 12px;">
                     <h3 style="margin-bottom: 0.5rem;">Información del Examen:</h3>
-                    <p>• 50 preguntas examen SuiteFoundation</p>
+                    <p>• Preguntas examen SuiteFoundation</p>
                     <p>• Algunas preguntas requieren seleccionar 2 respuestas</p>
                     <p>• Tiempo recomendado: 60 minutos</p>
                 </div>
             </div>
         </div>
 
-        <!-- Modo Pregunta por Pregunta -->
+        <!-- Modo Pregunta por Pregunta (Retroalimentación Inmediata) -->
         <div id="single-question-mode" style="display:none;">
             <div class="exam-card">
                 <div class="progress">
-                    <span>Pregunta <span id="current-q-num">1</span> de <span id="total-q">50</span></span>
+                    <span>Pregunta <span id="current-q-num">1</span> de <span id="total-q">0</span></span>
                     <div class="progress-bar"><div class="progress-fill" id="single-progress-fill"></div></div>
                     <span id="score-display">0%</span>
                 </div>
@@ -76,9 +76,27 @@
             </div>
         </div>
 
+        <!-- Modo Examen Completo (Resultados al Final) -->
+        <div id="full-exam-mode" style="display:none;">
+            <div class="exam-card">
+                <div class="progress">
+                    <span>Progreso: <span id="answered-count">0</span> de <span id="total-questions">0</span> respondidas</span>
+                    <div class="progress-bar"><div class="progress-fill" id="full-exam-progress"></div></div>
+                    <span id="full-exam-percent">0%</span>
+                </div>
+                
+                <div id="full-exam-questions"></div>
+                
+                <div class="footer">
+                    <button onclick="submitFullExam()" class="btn-submit">✅ Finalizar Examen y Ver Resultados</button>
+                    <button onclick="resetToConfig()" class="btn-reset">🔄 Reiniciar</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Resultados Finales -->
         <div id="results" class="results" style="display:none;">
-            <h2 style="text-align:center; margin-bottom:1rem;">🎉 ¡Examen Finalizado!</h2>
+            <h2 style="text-align:center; margin-bottom:1rem;">¡Examen Finalizado!</h2>
             
             <div class="score-circle" id="score-circle">
                 <div id="score-text">0%</div>
@@ -91,13 +109,13 @@
 
             <div style="margin-bottom: 1rem; text-align: center;">
                 <button onclick="toggleDetail()" class="btn-reset" style="padding: 8px 16px;">📋 Mostrar/Ocultar Detalle</button>
+                <button onclick="reviewWrongAnswers()" class="btn-reset" style="padding: 8px 16px;">📚 Repasar Solo Errores</button>
             </div>
 
             <div id="results-detail" style="max-height: 500px; overflow-y: auto;"></div>
 
             <div class="footer" style="margin-top:2rem;">
                 <button onclick="resetToConfig()" class="btn-reset">🔄 Nuevo Simulador</button>
-                <button onclick="reviewWrongAnswers()" class="btn-submit">Repasar Errores</button>
             </div>
         </div>
     </div>
