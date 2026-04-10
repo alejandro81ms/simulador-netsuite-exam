@@ -7,12 +7,43 @@ let timerInterval = null;
 let timeLeft = 3600; // 60 minutos en segundos
 let totalQuestions = 0;
 
+
+
+// Función para mezclar aleatoriamente un arreglo (Fisher-Yates)
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 // Inicialización
 function init() {
+    // Revisar si hay un examen en curso guardado
+    const savedAnswers = localStorage.getItem('immediateAnswers');
+    
+    if (savedAnswers) {
+        // Si hay respuestas guardadas, las cargamos (y NO barajamos para mantener el orden de la sesión recuperada)
+        userAnswers = JSON.parse(savedAnswers);
+    } else {
+        // Si NO hay respuestas guardadas (examen nuevo), barajamos todo:
+        
+        // 1. Barajamos el orden de las preguntas
+        shuffleArray(QUESTIONS_DB);
+        
+        // 2. Barajamos las opciones de cada pregunta
+        QUESTIONS_DB.forEach(q => {
+            if(q.options) shuffleArray(q.options);
+        });
+    }
+
+    // Continuamos con tu lógica original
     totalQuestions = QUESTIONS_DB.length;
     document.getElementById('total-q').textContent = totalQuestions;
-    document.getElementById('total-questions').textContent = totalQuestions;
-    document.getElementById('question-counter').textContent = `${totalQuestions} preguntas • 60 minutos`;
+    
+    startTimer();
+    renderQuestion();
 }
 
 function startExam(mode) {
@@ -86,7 +117,7 @@ function renderCurrentQuestion() {
         html += `
             <label class="option">
                 <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
-                       onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}')">
+                        onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}')">
                 <span class="option-label">${escapeHtml(opt.label)}</span>
             </label>
         `;
@@ -258,7 +289,7 @@ function renderFullExam() {
             html += `
                 <label class="option">
                     <input type="${inputType}" ${name} value="${opt.value}" ${checked} 
-                           onchange="saveFullAnswer(${q.id}, '${opt.value}', '${q.type}')">
+                            onchange="saveFullAnswer(${q.id}, '${opt.value}', '${q.type}')">
                     <span class="option-label">${escapeHtml(opt.label)}</span>
                 </label>
             `;
@@ -351,16 +382,16 @@ function showResults() {
     
     // Texto de resultado
     if (percentage >= 80) {
-        document.getElementById('result-text').innerHTML = "🎓 ¡Excelente! Estás listo para el examen oficial";
+        document.getElementById('result-text').innerHTML = "¡Excelente! Estás listo para el examen oficial";
         document.getElementById('result-subtitle').innerHTML = `Obtuviste ${correctCount} de ${totalQuestions} respuestas correctas (${percentage}%)`;
     } else if (percentage >= 70) {
-        document.getElementById('result-text').innerHTML = "👍 ¡Muy bien! Solo un poco más de repaso";
+        document.getElementById('result-text').innerHTML = "¡Muy bien! Solo un poco más de repaso";
         document.getElementById('result-subtitle').innerHTML = `Obtuviste ${correctCount} de ${totalQuestions} respuestas correctas (${percentage}%)`;
     } else if (percentage >= 60) {
-        document.getElementById('result-text').innerHTML = "📚 Buen intento. Sigue practicando";
+        document.getElementById('result-text').innerHTML = "Buen intento. Sigue practicando";
         document.getElementById('result-subtitle').innerHTML = `Obtuviste ${correctCount} de ${totalQuestions} respuestas correctas (${percentage}%)`;
     } else {
-        document.getElementById('result-text').innerHTML = "💪 Sigue practicando. ¡Puedes mejorar!";
+        document.getElementById('result-text').innerHTML = "Sigue practicando. ¡Puedes mejorar!";
         document.getElementById('result-subtitle').innerHTML = `Obtuviste ${correctCount} de ${totalQuestions} respuestas correctas (${percentage}%). Revisa las respuestas incorrectas.`;
     }
     
@@ -573,7 +604,7 @@ function checkReviewAnswer() {
 
 function finishReview() {
     clearInterval(timerInterval);
-    alert("✅ ¡Repaso completado! Vuelve a intentar el examen completo.");
+    alert("¡Repaso completado! Vuelve a intentar el examen completo.");
     resetToConfig();
 }
 
