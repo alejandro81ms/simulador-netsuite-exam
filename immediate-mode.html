@@ -157,7 +157,7 @@
             let html = `
                 <div class="question">
                     <div class="question-header">
-                        <div class="question-number" style="width: 35px; height: 35px; font-size: 1rem;">${question.id}</div>
+                        <div class="question-number" style="width: 35px; height: 35px; font-size: 1rem;">${currentIndex + 1}</div>
                         <div class="question-text" style="font-size: 1rem;">${escapeHtml(question.text)}</div>
                         ${question.type === "multi" ? `<div class="multi-label" style="font-size: 0.7rem;">Elige ${question.correct.length}</div>` : ""}
                     </div>

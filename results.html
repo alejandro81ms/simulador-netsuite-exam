@@ -87,7 +87,6 @@
     </style>
 </head>
 <body>
-    <!-- Header Compacto -->
     <div class="header-compact">
         <div class="container">
             <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -132,6 +131,7 @@
         let questionResults = {};
         let totalQuestions = 0;
         let currentFilter = 'all';
+        let displayOrder = []; // Aquí guardaremos el orden correcto de las preguntas
         
         function init() {
             const savedResults = localStorage.getItem('finalResults');
@@ -143,7 +143,15 @@
                 return;
             }
             
-            totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || QUESTIONS_DB.length;
+            // Cargar el orden aleatorio desde el LocalStorage. Si no existe, usa la base de datos original.
+            const savedOrder = localStorage.getItem('shuffledOrder');
+            if (savedOrder) {
+                displayOrder = JSON.parse(savedOrder);
+            } else {
+                displayOrder = QUESTIONS_DB;
+            }
+            
+            totalQuestions = parseInt(localStorage.getItem('totalQuestions')) || displayOrder.length;
             
             const correctCount = Object.values(questionResults).filter(r => r.isCorrect).length;
             const percentage = Math.round((correctCount / totalQuestions) * 100);
@@ -175,7 +183,8 @@
             const container = document.getElementById('results-container');
             let html = '';
             
-            QUESTIONS_DB.forEach(q => {
+            // Usamos displayOrder (el orden barajado) y usamos su índice + 1 para el número visible
+            displayOrder.forEach((q, index) => {
                 const result = questionResults[q.id];
                 if (!result) return;
                 
@@ -195,12 +204,13 @@
                     }).join(" • ") : 
                     q.options.find(o => o.value === result.correctAnswer).label;
                 
+                // Nota cómo aquí abajo cambiamos Pregunta ${q.id} por Pregunta ${index + 1}
                 html += `
                     <div class="result-detail-item ${result.isCorrect ? 'correct-bg' : 'incorrect-bg'}" onclick="toggleDetail(${q.id})">
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <div style="font-size: 1.2rem;">${result.isCorrect ? "✅" : "❌"}</div>
                             <div style="flex: 1;">
-                                <strong style="font-size: 0.9rem;">Pregunta ${q.id}</strong>
+                                <strong style="font-size: 0.9rem;">Pregunta ${index + 1}</strong>
                                 <div style="font-size: 0.8rem;">${escapeHtml(q.text.substring(0, 80))}${q.text.length > 80 ? '...' : ''}</div>
                                 <div style="font-size: 0.75rem; margin-top: 2px; color: ${result.isCorrect ? '#10b981' : '#ef4444'}">
                                     Tu: ${userText}
@@ -238,7 +248,7 @@
         
         function reviewWrong() {
             if (confirm("¿Repasar solo las preguntas incorrectas? Se iniciará un nuevo examen con esas preguntas.")) {
-                const wrongQuestions = QUESTIONS_DB.filter(q => {
+                const wrongQuestions = displayOrder.filter(q => {
                     const result = questionResults[q.id];
                     return result && !result.isCorrect;
                 });
