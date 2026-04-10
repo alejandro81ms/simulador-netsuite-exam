@@ -489,7 +489,7 @@ function renderReviewQuestion() {
         html += `
             <label class="option">
                 <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
-                       onchange="saveReviewAnswer(${question.id}, '${opt.value}', '${question.type}')">
+                    onchange="saveReviewAnswer(${question.id}, '${opt.value}', '${question.type}')">
                 <span class="option-label">${escapeHtml(opt.label)}</span>
             </label>
         `;
