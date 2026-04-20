@@ -91,8 +91,16 @@
         let timerInterval = null;
         let timeLeft = 3600;
         let totalQuestions = 0;
-        
-        // FUNCIÓN PARA MEZCLAR EL ORDEN (Fisher-Yates)
+
+        // Mostrar advertencia si intentan salir o recargar
+        window.addEventListener('beforeunload', function (e) {
+            if (timerInterval !== null) {
+                e.preventDefault();
+                e.returnValue = ''; 
+            }
+        });
+
+        // FUNCIÓN PARA MEZCLAR EL ORDEN
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -102,22 +110,25 @@
         }
 
         function init() {
-            // Revisar si hay un examen en curso guardado
             const savedAnswers = localStorage.getItem('immediateAnswers');
             const savedOrder = localStorage.getItem('shuffledOrder');
+            const savedResults = localStorage.getItem('immediateResults');
             
             if (savedAnswers && savedOrder) {
-                // Si recargó la página y hay progreso: recuperamos el progreso y el orden de preguntas barajado
+                // Recuperar progreso
                 userAnswers = JSON.parse(savedAnswers);
                 const parsedOrder = JSON.parse(savedOrder);
                 QUESTIONS_DB.splice(0, QUESTIONS_DB.length, ...parsedOrder);
+                
+                if (savedResults) {
+                    questionResults = JSON.parse(savedResults);
+                }
             } else {
-                // Si es un examen totalmente nuevo: barajamos preguntas y opciones
+                // Examen nuevo
                 shuffleArray(QUESTIONS_DB);
                 QUESTIONS_DB.forEach(q => {
                     if(q.options) shuffleArray(q.options);
                 });
-                // Guardamos este nuevo orden para protegerlo en caso de que recargue la página
                 localStorage.setItem('shuffledOrder', JSON.stringify(QUESTIONS_DB));
             }
 
@@ -138,6 +149,7 @@
             timerInterval = setInterval(() => {
                 if (timeLeft <= 0) {
                     clearInterval(timerInterval);
+                    timerInterval = null;
                     finishExam();
                 } else {
                     timeLeft--;
@@ -154,6 +166,9 @@
             const question = QUESTIONS_DB[currentIndex];
             const container = document.getElementById('question-container');
             
+            // Verificamos si ya hay un resultado guardado para esta pregunta
+            const hasResult = questionResults[question.id] !== undefined;
+            
             let html = `
                 <div class="question">
                     <div class="question-header">
@@ -169,9 +184,10 @@
                 const inputType = question.type === "multi" ? "checkbox" : "radio";
                 const name = question.type === "single" ? `name="q${question.id}"` : "";
                 
+                // Aplicamos el atributo disabled y bajamos la opacidad si ya fue verificada
                 html += `
-                    <label class="option" style="padding: 10px 14px;">
-                        <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} 
+                    <label class="option" style="padding: 10px 14px; ${hasResult ? 'opacity: 0.6; cursor: not-allowed;' : ''}">
+                        <input type="${inputType}" ${name} value="${opt.value}" ${isChecked ? 'checked' : ''} ${hasResult ? 'disabled' : ''}
                                 onchange="saveAnswer(${question.id}, '${opt.value}', '${question.type}', this)">
                         <span class="option-label" style="font-size: 0.9rem;">${escapeHtml(opt.label)}</span>
                     </label>
@@ -181,14 +197,50 @@
             html += `</div></div>`;
             container.innerHTML = html;
             
-            // Limpiar feedback
-            document.getElementById('feedback-container').innerHTML = '';
+            const feedbackDiv = document.getElementById('feedback-container');
+            const checkBtn = document.getElementById('check-btn');
             
-            // Actualizar navegación
+            // Lógica para mostrar feedback si ya fue respondida
+            if (hasResult) {
+                const result = questionResults[question.id];
+                
+                const correctText = Array.isArray(question.correct) ? 
+                    question.correct.map(c => {
+                        const opt = question.options.find(o => o.value === c);
+                        return opt ? opt.label : c;
+                    }).join(" • ") : 
+                    question.options.find(o => o.value === question.correct).label;
+                
+                const userText = result.userAnswer.length ? 
+                    result.userAnswer.map(a => {
+                        const opt = question.options.find(o => o.value === a);
+                        return opt ? opt.label : a;
+                    }).join(" • ") : "No respondida";
+
+                feedbackDiv.innerHTML = `
+                    <div class="${result.isCorrect ? 'feedback-correct' : 'feedback-incorrect'}" style="padding: 0.75rem; font-size: 0.9rem;">
+                        <strong>${result.isCorrect ? '✓ ¡Correcto!' : '✗ Incorrecto'}</strong><br>
+                        <strong>Tu respuesta:</strong> ${userText}<br>
+                        <strong>Correcta:</strong> ${correctText}<br>
+                        ${question.explanation ? `<strong>Explicación:</strong> ${question.explanation.substring(0, 150)}${question.explanation.length > 150 ? '...' : ''}` : ''}
+                    </div>
+                `;
+                
+                if (currentIndex === totalQuestions - 1) {
+                    checkBtn.style.display = 'block';
+                    checkBtn.textContent = 'Finalizar';
+                    checkBtn.onclick = finishExam;
+                } else {
+                    checkBtn.style.display = 'none';
+                }
+            } else {
+                feedbackDiv.innerHTML = '';
+                checkBtn.style.display = 'inline-block';
+                checkBtn.textContent = '✓ Verificar';
+                checkBtn.onclick = checkAnswer;
+            }
+            
             document.getElementById('prev-btn').disabled = (currentIndex === 0);
-            document.getElementById('current-q-num').textContent = currentIndex + 1;
-            
-            // Actualizar progreso
             updateProgress();
         }
         
@@ -199,7 +251,6 @@
             if (type === "single") {
                 userAnswers[qId] = [value];
             } else {
-                // multi: controlar el número máximo de selecciones
                 if (!userAnswers[qId]) userAnswers[qId] = [];
                 
                 if (inputElement.checked) {
@@ -259,6 +310,24 @@
             };
             
             localStorage.setItem('immediateResults', JSON.stringify(questionResults));
+            
+            // DESHABILITAR LOS INPUTS AL VERIFICAR
+            const inputs = document.querySelectorAll('#question-container input');
+            inputs.forEach(input => input.disabled = true);
+            
+            const labels = document.querySelectorAll('#question-container .option');
+            labels.forEach(label => {
+                label.style.opacity = '0.6';
+                label.style.cursor = 'not-allowed';
+            });
+            
+            const checkBtn = document.getElementById('check-btn');
+            if (currentIndex === totalQuestions - 1) {
+                checkBtn.textContent = 'Finalizar';
+                checkBtn.onclick = finishExam;
+            } else {
+                checkBtn.style.display = 'none';
+            }
         }
         
         function nextQuestion() {
@@ -286,6 +355,7 @@
         function finishExam() {
             if (confirm("¿Finalizar el examen? Se guardarán tus resultados.")) {
                 clearInterval(timerInterval);
+                timerInterval = null; // Limpiamos el intervalo para que no salte la alerta
                 
                 QUESTIONS_DB.forEach(q => {
                     if (!questionResults[q.id]) {
@@ -313,6 +383,7 @@
         function goHome() {
             if (confirm("¿Volver al inicio? Se perderá el progreso actual.")) {
                 clearInterval(timerInterval);
+                timerInterval = null; 
                 localStorage.clear();
                 window.location.href = 'index.html';
             }
