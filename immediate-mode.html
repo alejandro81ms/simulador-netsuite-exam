@@ -84,6 +84,7 @@
     </div>
 
     <script src="questions.js"></script>
+    
     <script>
         let currentIndex = 0;
         let userAnswers = {};
@@ -92,7 +93,7 @@
         let timeLeft = 3600;
         let totalQuestions = 0;
 
-        // Mostrar advertencia si intentan salir o recargar
+        // Mostrar advertencia si intentan salir o recargar mientras el timer está activo
         window.addEventListener('beforeunload', function (e) {
             if (timerInterval !== null) {
                 e.preventDefault();
@@ -100,7 +101,7 @@
             }
         });
 
-        // FUNCIÓN PARA MEZCLAR EL ORDEN
+        // FUNCIÓN PARA MEZCLAR EL ORDEN (Fisher-Yates)
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -110,12 +111,13 @@
         }
 
         function init() {
+            // Revisar si hay un examen en curso guardado
             const savedAnswers = localStorage.getItem('immediateAnswers');
             const savedOrder = localStorage.getItem('shuffledOrder');
             const savedResults = localStorage.getItem('immediateResults');
             
             if (savedAnswers && savedOrder) {
-                // Recuperar progreso
+                // Recuperar el progreso y el orden de preguntas barajado
                 userAnswers = JSON.parse(savedAnswers);
                 const parsedOrder = JSON.parse(savedOrder);
                 QUESTIONS_DB.splice(0, QUESTIONS_DB.length, ...parsedOrder);
@@ -124,7 +126,7 @@
                     questionResults = JSON.parse(savedResults);
                 }
             } else {
-                // Examen nuevo
+                // Examen nuevo: barajamos preguntas y opciones
                 shuffleArray(QUESTIONS_DB);
                 QUESTIONS_DB.forEach(q => {
                     if(q.options) shuffleArray(q.options);
@@ -241,6 +243,10 @@
             }
             
             document.getElementById('prev-btn').disabled = (currentIndex === 0);
+            
+            // ACTUALIZACIÓN DEL CONTADOR DE TEXTO (Pregunta X de Y)
+            document.getElementById('current-q-num').textContent = currentIndex + 1;
+            
             updateProgress();
         }
         
@@ -311,7 +317,7 @@
             
             localStorage.setItem('immediateResults', JSON.stringify(questionResults));
             
-            // DESHABILITAR LOS INPUTS AL VERIFICAR
+            // Deshabilitar los inputs al verificar
             const inputs = document.querySelectorAll('#question-container input');
             inputs.forEach(input => input.disabled = true);
             
@@ -395,6 +401,7 @@
             return div.innerHTML;
         }
         
+        // Arrancamos el simulador
         init();
     </script>
 </body>
